@@ -389,3 +389,197 @@ def wait_for_service(url: str, max_wait: int = 30, check_interval: int = 2) -> d
         "wait_time": max_wait,
         "timeout": True
     }
+
+@tool("log_condenser")
+def log_condenser(raw_output: str, max_lines: int = 50) -> str:
+    """Condense long logs to key error info for triage."""
+    try:
+        lines = raw_output.split('\n')
+        if len(lines) <= max_lines:
+            return raw_output
+        
+        # Keep first and last portions, highlight errors
+        error_lines = [line for line in lines if any(keyword in line.lower() 
+                      for keyword in ['error', 'fail', 'exception', 'traceback'])]
+        
+        condensed = []
+        condensed.extend(lines[:10])  # First 10 lines
+        
+        if error_lines:
+            condensed.append("\n--- KEY ERRORS ---")
+            condensed.extend(error_lines[:20])  # Up to 20 error lines
+        
+        condensed.append("\n--- LAST OUTPUT ---")
+        condensed.extend(lines[-10:])  # Last 10 lines
+        
+        return '\n'.join(condensed)
+    except Exception as e:
+        return f"Error condensing logs: {str(e)}"
+
+@tool("error_triage")
+def error_triage(test_output: str, spec: str) -> dict:
+    """Analyze errors and suggest reproduction steps and suspect files."""
+    try:
+        errors = []
+        suggestions = []
+        suspect_files = []
+        
+        # Parse common error patterns
+        lines = test_output.split('\n')
+        for line in lines:
+            line_lower = line.lower()
+            if 'traceback' in line_lower or 'error:' in line_lower:
+                errors.append(line.strip())
+            if 'file "' in line_lower:
+                # Extract file names from error traces
+                import re
+                file_match = re.search(r'file "([^"]+)"', line, re.IGNORECASE)
+                if file_match:
+                    suspect_files.append(file_match.group(1))
+        
+        # Generate suggestions based on error patterns
+        error_text = test_output.lower()
+        if 'modulenotfounderror' in error_text:
+            suggestions.append("Install missing dependencies")
+        if 'syntaxerror' in error_text:
+            suggestions.append("Fix syntax errors in code")
+        if 'importerror' in error_text:
+            suggestions.append("Check import paths and module structure")
+        if 'connectionerror' in error_text or 'connection refused' in error_text:
+            suggestions.append("Start required services or check ports")
+        
+        return {
+            "errors": errors[:5],  # Top 5 errors
+            "suggestions": suggestions,
+            "suspect_files": list(set(suspect_files[:10])),  # Unique files
+            "repro_steps": [
+                "Run the failing test in isolation",
+                "Check file dependencies",
+                "Verify service prerequisites"
+            ]
+        }
+    except Exception as e:
+        return {"errors": [f"Triage failed: {str(e)}"], "suggestions": [], "suspect_files": []}
+
+@tool("context_manager")
+def context_manager(spec: str, suspect_files: list, query: str) -> dict:
+    """Retrieve only relevant code snippets to keep prompts small (RAG-style)."""
+    try:
+        snippets = {}
+        
+        # Read suspect files and extract relevant sections
+        for file_path in suspect_files[:5]:  # Limit to 5 files
+            try:
+                if os.path.exists(file_path):
+                    with open(file_path, 'r') as f:
+                        content = f.read()
+                        # Keep only first 500 chars of each file for context
+                        snippets[file_path] = content[:500] + "..." if len(content) > 500 else content
+            except:
+                continue
+        
+        # Extract key sections from spec
+        spec_summary = spec[:300] + "..." if len(spec) > 300 else spec
+        
+        return {
+            "spec_summary": spec_summary,
+            "file_snippets": snippets,
+            "query_context": f"Focused on: {query}"
+        }
+    except Exception as e:
+        return {"error": f"Context retrieval failed: {str(e)}"}
+
+@tool("web_search")
+def web_search(error_query: str) -> dict:
+    """Search for external solutions to errors (mock implementation for demo)."""
+    try:
+        # This is a mock implementation - in production you'd use real search APIs
+        common_solutions = {
+            "modulenotfounderror": "Install package with pip install <package_name>",
+            "syntaxerror": "Check for missing colons, parentheses, or indentation",
+            "importerror": "Verify module exists and is in PYTHONPATH",
+            "connectionerror": "Ensure service is running on correct port",
+            "permission denied": "Check file permissions or run with appropriate access"
+        }
+        
+        # Find matching solution
+        error_lower = error_query.lower()
+        for error_type, solution in common_solutions.items():
+            if error_type in error_lower:
+                return {
+                    "query": error_query,
+                    "solution": solution,
+                    "confidence": "high",
+                    "source": "common_patterns"
+                }
+        
+        return {
+            "query": error_query,
+            "solution": "No specific solution found. Consider checking documentation.",
+            "confidence": "low",
+            "source": "fallback"
+        }
+    except Exception as e:
+        return {"error": f"Web search failed: {str(e)}"}
+
+@tool("url_fetch")
+def url_fetch(url: str) -> str:
+    """Fetch content from URL for research (limited implementation)."""
+    try:
+        # Simple HTTP GET with timeout
+        import urllib.request
+        import urllib.error
+        
+        req = urllib.request.Request(url, headers={'User-Agent': 'CodeAgent/1.0'})
+        with urllib.request.urlopen(req, timeout=10) as response:
+            content = response.read().decode('utf-8')
+            # Return first 2KB to avoid context bloat
+            return content[:2048] + "..." if len(content) > 2048 else content
+    except Exception as e:
+        return f"Failed to fetch {url}: {str(e)}"
+
+
+class ProjectAwareTools:
+    """Project-aware utility functions for dynamic project management"""
+    
+    def __init__(self, project_dir: str):
+        self.project_dir = project_dir
+    
+    def get_project_dir(self) -> str:
+        """Get the current project directory"""
+        return self.project_dir
+    
+    def file_exists(self, filename: str) -> bool:
+        """Check if a file exists in the project directory"""
+        return os.path.exists(os.path.join(self.project_dir, filename))
+    
+    def read_file(self, filename: str) -> str:
+        """Read a file from the project directory"""
+        try:
+            with open(os.path.join(self.project_dir, filename), 'r') as f:
+                return f.read()
+        except Exception as e:
+            return f"Error reading {filename}: {str(e)}"
+    
+    def write_file(self, filename: str, content: str) -> bool:
+        """Write a file to the project directory"""
+        try:
+            # Create directory if it doesn't exist
+            file_path = os.path.join(self.project_dir, filename)
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            
+            with open(file_path, 'w') as f:
+                f.write(content)
+            return True
+        except Exception as e:
+            print(f"Error writing {filename}: {str(e)}")
+            return False
+    
+    def list_files(self, pattern: str = "*") -> list:
+        """List files in the project directory"""
+        try:
+            import glob
+            return glob.glob(os.path.join(self.project_dir, pattern))
+        except Exception as e:
+            print(f"Error listing files: {str(e)}")
+            return []

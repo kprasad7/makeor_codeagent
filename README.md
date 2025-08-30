@@ -1,122 +1,185 @@
-# MakeOr CodeAgent
+# MakeOR Code Agent - Production Edition
 
-A complete exact flow implementation for automated code generation using LangChain, LangGraph, and Mistral AI.
+An enterprise-grade multi-agent code generation system with advanced features and dynamic project management.
 
-## Features
+## Overview
 
-- **8 Specialized Agents**: Planner → Architect → Coder → Conductor → Tester → Runner → Reviewer → Fixer
-- **Autonomous Workflow**: From requirements to working code with zero human intervention
-- **Real File Creation**: Generates and executes actual Python applications
-- **Error Recovery**: Built-in error handling and iterative improvement
-- **Production Ready**: Tested with 100% success rate across diverse coding challenges
+MakeOR Code Agent is a sophisticated AI-powered development platform that generates complete, production-ready applications using advanced multi-agent workflows, RAG systems, parallel processing, and intelligent project management.
 
-## 📁 Core Files
+## Core Features
 
-- `workflow.py` - Main workflow engine with StateGraph orchestration
-- `agents.py` - 8 specialized agent definitions with Mistral API integration
-- `tools.py` - File system, execution, and testing tools
-- `prompts.py` - Comprehensive prompt templates for each agent role
-- `main.py` - Entry point and workflow execution
+### 🤖 **Multi-Agent Architecture**
+- **PLANNER**: Strategic application planning with 5-level reasoning
+- **ARCHITECT**: Enterprise file manifest and system design
+- **CODER**: Full-stack code generation with tool execution
+- **TESTER**: Golden test creation and validation
+- **REVIEWER**: Intelligent code review and quality assurance
+- **CONDUCTOR**: Workflow orchestration with bounded loops
 
-## 🛠️ Setup
+### 🚀 **Advanced Enterprise Features**
+- **RAG System**: Code embeddings and intelligent context retrieval
+- **Parallel Testing**: Multi-service test execution with asyncio
+- **Advanced Caching**: Error patterns and research result caching
+- **Version Pinning**: Aggressive dependency version locking
+- **Dynamic Project Management**: Isolated project directories
 
-1. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+### 📁 **Project Management**
+- **Unique Project IDs**: Timestamped project identification
+- **Project Isolation**: Complete separation of generated applications
+- **Automatic Cleanup**: Optional deletion of previous projects
+- **Metadata Tracking**: Comprehensive project information storage
 
-2. Set your Mistral API key:
-   ```bash
-   export MISTRAL_API_KEY="your-api-key-here"
-   ```
+## Installation
 
-3. Run the workflow:
-   ```python
-   from workflow import run_workflow
-   
-   result = run_workflow("Create a Python CLI tool that greets users")
-   print(f"Generated {len(result['code'])} characters of code!")
-   ```
+```bash
+# Clone the repository
+git clone https://github.com/kprasad7/makeor_codeagent.git
+cd makeor_codeagent
 
-## 📋 Example Usage
+# Install dependencies
+pip install -r requirements.txt
 
-```python
-# Simple usage
-from workflow import run_workflow
-
-# Generate a calculator
-result = run_workflow("""
-Create a Python calculator with add and multiply functions.
-Include type hints and a main function that demonstrates usage.
-""")
-
-# Check results
-print(f"Code generated: {len(result['code'])} chars")
-print(f"Errors: {len(result['errors'])}")
+# Set up environment
+export MISTRAL_API_KEY="your_api_key_here"
 ```
-
-## 🎯 Example Generated Applications
-
-- `greet_cli.py` - CLI greeting tool with argparse support
-- `factorial.py` - Mathematical factorial calculator with error handling
-
-## 🔧 System Architecture
-
-1. **Planner**: Analyzes requirements and creates project specification
-2. **Architect**: Designs technical architecture and file structure  
-3. **Coder**: Generates actual Python code with diff patches
-4. **Conductor**: Makes workflow routing decisions
-5. **Tester**: Creates test cases (optional workflow path)
-6. **Runner**: Executes code and applies file patches
-7. **Reviewer**: Reviews code quality (optional workflow path)
-8. **Fixer**: Applies fixes based on review feedback
-
-## ✅ Verified Capabilities
-
-- ✅ CLI tools with argument parsing
-- ✅ Mathematical algorithms with error handling
-- ✅ Data processing scripts  
-- ✅ File I/O operations
-- ✅ Web utilities and validation
-- ✅ Type hints and documentation
-- ✅ Error handling and edge cases
-
-## 🚀 Production Ready
-
-This system has been tested with:
-- **100% success rate** across diverse coding challenges
-- **4,000+ characters** of production-ready code generated
-- **Zero critical errors** in workflow execution
-- **Real file creation** with working, executable applications
-
-## Files
-
-- `prompts.py`: Contains all system and role prompts.
-- `tools.py`: Tool implementations for fs/proc/http/etc.
-- `agents.py`: Agent definitions and bindings.
-- `main.py`: Entry point to orchestrate the workflow.
 
 ## Usage
 
-Run the example:
+### Basic Usage
 ```bash
-python main.py
+# Generate a simple application
+python main.py "Create a FastAPI blog application with user authentication"
+
+# Custom project name with cleanup
+python main.py --project my_blog --cleanup "Create a blog API with PostgreSQL"
 ```
 
-This will invoke the Planner agent with a sample user prompt.
+### Project Management
+```bash
+# List all projects
+python project_manager.py list
 
-## Workflow
+# Create specific project
+python project_manager.py create "my_project_name"
 
-1. **Planner**: Turns user prompt into a plan.
-2. **Architect**: Produces technical spec.
-3. **Coder**: Generates code patches.
-4. **Tester**: Writes and runs tests.
-5. **Reviewer**: Reviews for quality.
-6. **Fixer**: Fixes issues if needed.
-7. **Conductor**: Orchestrates the flow.
+# Cleanup old projects (keep last 3)
+python project_manager.py cleanup 3
 
-## Notes
+# Switch to existing project
+python project_manager.py switch <project_id>
+```
 
-- Ensure the workspace is sandboxed as per guardrails.
-- Tools are implemented minimally; enhance as needed (e.g., fs_write_patch).
-- For production, integrate with LangGraph for state management.
+### Advanced Options
+```bash
+# Help and options
+python main.py --help
+
+# Available flags:
+--cleanup         # Delete previous projects before creating new one
+--project <name>  # Custom project name
+```
+
+## Generated Project Structure
+
+Each generated project follows a standardized structure:
+
+```
+generated_projects/
+├── 20250830_HHMMSS_projectname_uuid/
+│   ├── backend/          # Backend application code
+│   ├── frontend/         # Frontend application code
+│   ├── database/         # Database schemas and migrations
+│   ├── docs/            # Documentation and API specs
+│   ├── tests/           # Test suites and fixtures
+│   ├── scripts/         # Build and deployment scripts
+│   ├── main.py          # Application entry point
+│   ├── models.py        # Data models
+│   ├── requirements.txt # Python dependencies
+│   └── ...              # Additional generated files
+└── .project_metadata.json  # Project tracking database
+```
+
+## Architecture
+
+### Multi-Agent Workflow
+```
+USER GOAL → PLANNER → ARCHITECT → CODER → CONDUCTOR
+                                     ↓
+TESTER ← SERVICE_MANAGER ← CONDUCTOR → RUNNER
+   ↓                                      ↓
+REVIEWER ← ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ← CONDUCTOR
+   ↓                                      ↓
+FIXER → CONDUCTOR → PREVIEW (SUCCESS)
+```
+
+### Advanced Features Integration
+- **RAG Context**: Function-level embeddings for intelligent code suggestions
+- **Parallel Execution**: Concurrent testing of frontend and backend services
+- **Error Caching**: Fingerprinting and caching of error patterns
+- **Research Caching**: Cached web research results for faster development
+
+## Configuration
+
+### Environment Variables
+```bash
+MISTRAL_API_KEY=your_mistral_api_key
+```
+
+### System Requirements
+- Python 3.8+
+- 4GB+ RAM recommended
+- SQLite for caching (included)
+- Internet connection for AI API calls
+
+## Production Deployment
+
+### Docker Support
+```bash
+# Build and run with Docker Compose
+docker-compose up --build
+
+# Backend only
+docker build -f Dockerfile.backend -t makeor-backend .
+
+# Frontend only  
+docker build -f Dockerfile.frontend -t makeor-frontend .
+```
+
+### Security Considerations
+- API keys should be stored securely
+- Generated code should be reviewed before deployment
+- File permissions should be properly configured
+- Network access should be restricted in production
+
+## API Reference
+
+### Core Functions
+- `run_workflow(prompt, project_name=None, cleanup=False)`: Main entry point
+- `ProjectDirectoryManager`: Project lifecycle management
+- `integrate_advanced_features()`: Advanced feature initialization
+
+### Tool Functions
+- `fs_write_file(path, content)`: File writing with safety checks
+- `fs_read(path)`: File reading with error handling
+- `proc_run(command, cwd)`: Process execution with timeout
+- `python_test_runner(test_code)`: Test execution framework
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new features
+5. Submit a pull request
+
+## License
+
+MIT License - see LICENSE file for details
+
+## Support
+
+For issues and questions:
+- GitHub Issues: [Repository Issues](https://github.com/kprasad7/makeor_codeagent/issues)
+- Documentation: See `/docs` in generated projects
+- Advanced Features: See `ENHANCED_CAPABILITIES.md`
+- Project Management: See `DYNAMIC_PROJECT_MANAGEMENT.md`
